@@ -1,6 +1,5 @@
 class Academy
-  attr_accessor :logo
-  attr_reader :name
+  attr_accessor :name, :logo
 
   def initialize(name, logo = '')
     @name = name

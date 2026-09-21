@@ -1,4 +1,6 @@
 class Admin
+  require "debug" # binding.break
+
   # dentro del irb -> require "./admin.rb"
   # si quiero recargarlo sin salir -> load "./admin.rb"
  
@@ -21,51 +23,64 @@ class Admin
   end
 
   def menu
-    puts "-----------------------"
-    puts "Menu:"
-    puts "0.- Salir"
-    puts "1.- Mostrar academias"
-    puts "2.- Agregar academia"
-    puts "3.- Editar academia"
-    puts "4.- Eliminar academia"
+    loop do
+      puts "-----------------------"
+      puts "Menu:"
+      puts "0.- Salir"
+      puts "1.- Mostrar academias"
+      puts "2.- Agregar academia"
+      puts "3.- Editar academia"
+      puts "4.- Eliminar academia"
 
-    # gets: obtiene la entrada del usuario como String pero con salto de linea al final \n
-    # chomp: elimina el \n del final
-    # gets.chomp
-    opcion = gets.chomp
+      # gets: obtiene la entrada del usuario como String pero con salto de linea al final \n
+      # chomp: elimina el \n del final
+      # gets.chomp
+      opcion = gets.chomp.strip
 
-    case opcion
-    when "0"
-      puts "¡Hasta pronto!"
-    when "1"
-      show_academies
-      menu
-    when "2"
-      create_academy
-      menu
-    when "3"
-      menu
-    when "4"
-      menu
-    else
-      puts "Esa no es una opción valida..."
+      case opcion
+      when "0"
+        puts "¡Hasta pronto!"
 
-      menu
+        break
+      when "1"
+        if(@academies.length > 0)
+          puts "Tus academias registradas son:"
+          show_academies
+        else
+          puts "No cuentas con ninguna academia registrada"
+        end
+      when "2"
+        create_academy
+      when "3"
+        if @academies.length > 0
+          edit_academy
+        else 
+          puts "No tienes academias para editar"
+        end
+      when "4"
+        if @academies.length > 0
+          delete_academy
+        else
+          puts "No tienes academias para eliminar"
+        end
+      else
+        puts "Esa no es una opción valida..."
+      end
     end
   end
 
   private
 
+  def welcome
+    puts "¡Haz creado tu cuenta con exito!"
+    puts "Bienvenido #{@name} #{@last_name}"
+    puts "Usa el metodo menu para ver todas las opciones disponibles"
+  end
+
   # mostramos las academias si es que tiene
   def show_academies
-    if(@academies.length > 0)
-      puts "Tus academias registradas son:"
-
-      @academies.each do |academy|
-        puts academy.name
-      end
-    else
-      puts "No cuentas con ninguna academia registrada"
+    @academies.each do |academy|
+      puts academy.name
     end
   end
 
@@ -74,25 +89,29 @@ class Admin
     puts "Vamos a crear una nueva academia"
 
     print "Nombre: "
-    academy_name = gets.chomp
+    academy_name = gets.chomp.strip
+
+    if academy_name.empty?
+      puts "No pueden existir academias sin nombre"
+
+      return
+    end
 
     if @academies.length > 0
       @academies.each do |academy|
         if academy.name.downcase == academy_name.downcase
           puts "No fue posible crear la academia, intenta nuevamente"
-        
-          menu
         end
       end
     end
 
     print "Logo: "
-    logo = gets.chomp
+    logo = gets.chomp.strip
 
-    set_academy(academy_name, logo)
+    init_valid_academy(academy_name, logo)
   end
 
-  def set_academy(name, logo)
+  def init_valid_academy(name, logo)
     academy = Academy.new(name, logo)
 
     if academy
@@ -104,9 +123,72 @@ class Admin
     end
   end
 
-  def welcome
-    puts "¡Haz creado tu cuenta con exito!"
-    puts "Bienvenido #{@name} #{@last_name}"
-    puts "Usa el metodo menu para ver todas las opciones disponibles"
+  def edit_academy
+    show_academies
+    
+    print "¿Que academia deseas editar?: "
+    academy_name = gets.chomp.strip
+
+    academy = set_academy(academy_name)
+    if academy
+
+      puts academy.name
+      puts academy.logo
+  
+      puts "Presiona enter para conservar el valor actual"
+      print "Nuevo nombre: "
+      new_name = gets.chomp.strip
+      if !new_name.empty?
+        academy.name = new_name
+      end
+  
+      print "Nuevo logo: "
+      new_logo = gets.chomp.strip
+      if !new_logo.empty?
+        academy.logo = new_logo
+      end
+  
+      puts "Tu academia a sido editada correctamente"
+      puts "#{academy.name} - #{academy.logo}"
+    else
+      puts "No existe academia con ese nombre para editar"
+    end
+  end
+
+  def delete_academy
+    show_academies
+    
+    print "¿Que academia deseas eliminar?: "
+    academy_name = gets.chomp.strip
+
+    academy = set_academy(academy_name)
+    if academy
+      puts "y / n"
+      puts "Seguro que deseas eliminar tu academia: #{academy.name}"
+
+      response = gets.chomp.downcase.strip
+
+      if response == 'y'
+        @academies.delete(academy)
+
+        puts "Tu academia #{academy.name} fue eliminada correctamente"
+      elsif response == 'n'
+        puts "No se eliminara ninguna academia"
+      else
+        puts "No es una opcion correcta"
+      end
+    else
+      puts "No existe ninguna academia con ese nombre"
+    end
+  end
+
+  def set_academy(name)
+    if @academies.length > 0
+      @academies.each do |academy|
+        return academy if academy.name.downcase == name.downcase
+      end
+
+      nil
+    end
   end
 end
